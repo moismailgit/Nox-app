@@ -271,18 +271,38 @@
 
         /* رسائل التنبيه */
         .alert {
-            background: rgba(255, 71, 87, 0.1);
-            border: 1px solid rgba(255, 71, 87, 0.3);
-            color: #ff6b81;
+            background: rgba(52, 152, 219, 0.1);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+            color: #3498db;
             padding: 12px 15px;
             border-radius: 10px;
-            margin: 15px 0;
+            margin: 15px;
             display: none;
+            position: relative;
+            z-index: 1001;
         }
 
         .alert.show {
             display: block;
             animation: slideIn 0.3s ease;
+        }
+
+        .alert.error {
+            background: rgba(255, 71, 87, 0.1);
+            border-color: rgba(255, 71, 87, 0.3);
+            color: #ff6b81;
+        }
+
+        .alert.success {
+            background: rgba(46, 204, 113, 0.1);
+            border-color: rgba(46, 204, 113, 0.3);
+            color: #2ecc71;
+        }
+
+        .alert.warning {
+            background: rgba(241, 196, 15, 0.1);
+            border-color: rgba(241, 196, 15, 0.3);
+            color: #f1c40f;
         }
 
         @keyframes slideIn {
@@ -297,6 +317,7 @@
             .tab i { font-size: 1rem; }
             .card { padding: 15px; }
             .fab { bottom: 20px; right: 20px; width: 50px; height: 50px; }
+            .alert { margin: 10px; }
         }
 
         /* تخصيص شريط التمرير */
@@ -317,6 +338,16 @@
         ::-webkit-scrollbar-thumb:hover {
             background: linear-gradient(45deg, #0099ee, #00e4ff);
         }
+
+        /* رسالة الترحيب */
+        .welcome-message {
+            text-align: center;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            margin: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
     </style>
 </head>
 <body>
@@ -324,6 +355,15 @@
     <div class="app-header">
         <h1><i class="fas fa-moon"></i> Nox</h1>
         <p>نظام المحادثات المجهولة المزدوجة</p>
+    </div>
+
+    <!-- رسائل التنبيه -->
+    <div class="alert" id="alert"></div>
+
+    <!-- رسالة الترحيب (تظهر عند عدم وجود بيانات) -->
+    <div class="welcome-message" id="welcomeMessage" style="display: none;">
+        <h3><i class="fas fa-moon"></i> مرحباً بك في Nox!</h3>
+        <p>ابدأ بالضغط على زر جديد لبدء محادثة عشوائية أو أنشئ قناتك الخاصة</p>
     </div>
 
     <!-- علامات التبويب -->
@@ -341,9 +381,6 @@
             <span>جديد</span>
         </div>
     </div>
-
-    <!-- تنبيهات -->
-    <div class="alert" id="alert"></div>
 
     <!-- محتوى تبويب المحادثات -->
     <div class="tab-content active" id="chats">
@@ -427,33 +464,94 @@
 
     <script>
         // تهيئة Telegram Web App
-        let tg = window.Telegram.WebApp;
+        let tg = null;
         let userId = null;
         let userToken = null;
         let currentTab = 'chats';
+        let isInitialized = false;
 
         // تهيئة التطبيق
-        document.addEventListener('DOMContentLoaded', function() {
-            tg.expand(); // توسيع التطبيق
-            tg.enableClosingConfirmation(); // تأكيد الإغلاق
-            tg.BackButton.hide(); // إخفاء زر العودة
-
-            // استخراج بيانات المستخدم من الرابط
-            const urlParams = new URLSearchParams(window.location.search);
-            userId = urlParams.get('user_id');
-            userToken = urlParams.get('token');
-
-            if (!userId || !userToken) {
-                showAlert('خطأ في بيانات المستخدم', 'error');
-                setTimeout(() => tg.close(), 2000);
-                return;
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // انتظار تحميل Telegram Web App
+                if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                    tg = Telegram.WebApp;
+                    
+                    // تهيئة التطبيق
+                    tg.expand(); // توسيع التطبيق
+                    tg.enableClosingConfirmation(); // تأكيد الإغلاق
+                    tg.BackButton.hide(); // إخفاء زر العودة
+                    
+                    // عرض معلومات التطبيق
+                    console.log('Telegram Web App initialized:', {
+                        platform: tg.platform,
+                        version: tg.version,
+                        initData: tg.initData,
+                        initDataUnsafe: tg.initDataUnsafe
+                    });
+                    
+                    // استخراج بيانات المستخدم من الرابط أو من Telegram
+                    const urlParams = new URLSearchParams(window.location.search);
+                    userId = urlParams.get('user_id') || tg.initDataUnsafe?.user?.id;
+                    userToken = urlParams.get('token') || tg.initDataUnsafe?.query_id;
+                    
+                    if (!userId || !userToken) {
+                        showAlert('يرجى فتح التطبيق من خلال بوت Telegram', 'error');
+                        
+                        // عرض رسالة الترحيب في حالة عدم وجود بيانات
+                        document.getElementById('welcomeMessage').style.display = 'block';
+                        document.getElementById('chats-list').style.display = 'none';
+                        document.getElementById('channels-list').style.display = 'none';
+                        
+                        // عرض تبويب جديد فقط
+                        switchTab('new');
+                        return;
+                    }
+                    
+                    // إرسال بيانات التهيئة للبوت
+                    if (tg.initData) {
+                        await sendToBot('init_data', {
+                            initData: tg.initData,
+                            userId: userId,
+                            userToken: userToken
+                        });
+                    }
+                    
+                    // إعداد علامات التبويب
+                    setupTabs();
+                    
+                    // تحميل البيانات الأولية
+                    await loadData();
+                    
+                    isInitialized = true;
+                    
+                } else {
+                    // حالة التطبيق خارج Telegram
+                    showAlert('فتح التطبيق من خلال Telegram للاستخدام الكامل', 'warning');
+                    
+                    userId = 'demo_user';
+                    userToken = 'demo_token';
+                    
+                    // إعداد علامات التبويب
+                    setupTabs();
+                    
+                    // تحميل بيانات تجريبية
+                    await loadDemoData();
+                    
+                    isInitialized = true;
+                }
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showAlert('حدث خطأ في تهيئة التطبيق: ' + error.message, 'error');
+                
+                // العرض التجريبي في حالة الخطأ
+                userId = 'demo_user';
+                userToken = 'demo_token';
+                setupTabs();
+                await loadDemoData();
+                isInitialized = true;
             }
-
-            // إعداد علامات التبويب
-            setupTabs();
-            
-            // تحميل البيانات الأولية
-            loadData();
         });
 
         // إعداد علامات التبويب
@@ -482,6 +580,8 @@
                 loadChats();
             } else if (tabId === 'channels') {
                 loadChannels();
+            } else if (tabId === 'new') {
+                document.getElementById('welcomeMessage').style.display = 'none';
             }
         }
 
@@ -491,9 +591,19 @@
             await loadChannels();
         }
 
+        // تحميل بيانات تجريبية
+        async function loadDemoData() {
+            setTimeout(() => {
+                loadChats();
+                loadChannels();
+            }, 500);
+        }
+
         // تحميل المحادثات
         async function loadChats() {
             const chatsList = document.getElementById('chats-list');
+            
+            // إظهار حالة التحميل
             chatsList.innerHTML = `
                 <div class="loading-state">
                     <div class="spinner"></div>
@@ -502,52 +612,65 @@
             `;
 
             try {
-                // محاكاة بيانات للاختبار
-                setTimeout(() => {
-                    const chats = getMockChats();
-                    
-                    if (chats.length === 0) {
-                        chatsList.innerHTML = `
-                            <div class="empty-state">
-                                <div class="empty-icon"><i class="fas fa-comment-slash"></i></div>
-                                <div class="empty-title">لا توجد محادثات</div>
-                                <div class="empty-description">
-                                    لم تبدأ أو تتلقى أي محادثات بعد. شارك رابطك الشخصي أو ابدأ محادثة عشوائية.
-                                </div>
-                            </div>
-                        `;
-                        return;
+                // محاولة جلب البيانات من البوت
+                let chats = [];
+                
+                if (userId && userToken && userId !== 'demo_user') {
+                    // جلب البيانات الفعلية من البوت
+                    const response = await fetchFromBot('get_chats', { userId, userToken });
+                    if (response && response.success) {
+                        chats = response.chats || [];
                     }
+                }
+                
+                // إذا لم تكن هناك بيانات، استخدم بيانات تجريبية
+                if (chats.length === 0) {
+                    chats = getMockChats();
+                }
+                
+                // عرض البيانات
+                if (chats.length === 0) {
+                    chatsList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="fas fa-comment-slash"></i></div>
+                            <div class="empty-title">لا توجد محادثات</div>
+                            <div class="empty-description">
+                                لم تبدأ أو تتلقى أي محادثات بعد. شارك رابطك الشخصي أو ابدأ محادثة عشوائية.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
 
-                    let html = '';
-                    chats.forEach(chat => {
-                        html += `
-                            <div class="card" onclick="openChat(${chat.id})">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i class="fas fa-user-secret"></i> ${chat.alias}
-                                    </div>
-                                    ${chat.unread > 0 ? `<div class="card-badge">${chat.unread}</div>` : ''}
+                let html = '';
+                chats.forEach(chat => {
+                    html += `
+                        <div class="card" onclick="openChat(${chat.id})">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-user-secret"></i> ${chat.alias}
                                 </div>
-                                <div class="card-content">
-                                    ${chat.lastMessage}
+                                ${chat.unread > 0 ? `<div class="card-badge">${chat.unread}</div>` : ''}
+                            </div>
+                            <div class="card-content">
+                                ${chat.lastMessage}
+                            </div>
+                            <div class="card-footer">
+                                <div class="card-stat">
+                                    <i class="far fa-clock"></i> ${chat.time}
                                 </div>
-                                <div class="card-footer">
-                                    <div class="card-stat">
-                                        <i class="far fa-clock"></i> ${chat.time}
-                                    </div>
-                                    <div class="card-stat">
-                                        <i class="fas fa-comment"></i> ${chat.messageCount} رسالة
-                                    </div>
+                                <div class="card-stat">
+                                    <i class="fas fa-comment"></i> ${chat.messageCount} رسالة
                                 </div>
                             </div>
-                        `;
-                    });
+                        </div>
+                    `;
+                });
 
-                    chatsList.innerHTML = html;
-                }, 1000);
+                chatsList.innerHTML = html;
 
             } catch (error) {
+                console.error('Error loading chats:', error);
                 showAlert('حدث خطأ في تحميل المحادثات', 'error');
                 chatsList.innerHTML = `
                     <div class="empty-state">
@@ -572,56 +695,68 @@
             `;
 
             try {
-                setTimeout(() => {
-                    const channels = getMockChannels();
-                    
-                    if (channels.length === 0) {
-                        channelsList.innerHTML = `
-                            <div class="empty-state">
-                                <div class="empty-icon"><i class="fas fa-users-slash"></i></div>
-                                <div class="empty-title">لا توجد قنوات</div>
-                                <div class="empty-description">
-                                    لم تنشئ أو تنضم لأي قنوات بعد. أنشئ قناتك الأولى أو انضم لقنوات عامة.
-                                </div>
-                            </div>
-                        `;
-                        return;
+                // محاولة جلب البيانات من البوت
+                let channels = [];
+                
+                if (userId && userToken && userId !== 'demo_user') {
+                    const response = await fetchFromBot('get_channels', { userId, userToken });
+                    if (response && response.success) {
+                        channels = response.channels || [];
                     }
+                }
+                
+                // إذا لم تكن هناك بيانات، استخدم بيانات تجريبية
+                if (channels.length === 0) {
+                    channels = getMockChannels();
+                }
 
-                    let html = '';
-                    channels.forEach(channel => {
-                        const roleEmoji = getRoleEmoji(channel.role);
-                        
-                        html += `
-                            <div class="card" onclick="openChannel(${channel.id})">
-                                <div class="card-header">
-                                    <div class="card-title">
-                                        <i class="fas fa-hashtag"></i> ${channel.name}
-                                    </div>
-                                    <div class="card-badge">${roleEmoji} ${channel.role}</div>
+                if (channels.length === 0) {
+                    channelsList.innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-icon"><i class="fas fa-users-slash"></i></div>
+                            <div class="empty-title">لا توجد قنوات</div>
+                            <div class="empty-description">
+                                لم تنشئ أو تنضم لأي قنوات بعد. أنشئ قناتك الأولى أو انضم لقنوات عامة.
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = '';
+                channels.forEach(channel => {
+                    const roleEmoji = getRoleEmoji(channel.role);
+                    
+                    html += `
+                        <div class="card" onclick="openChannel(${channel.id})">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <i class="fas fa-hashtag"></i> ${channel.name}
                                 </div>
-                                <div class="card-content">
-                                    ${channel.topic}
+                                <div class="card-badge">${roleEmoji} ${channel.role}</div>
+                            </div>
+                            <div class="card-content">
+                                ${channel.topic}
+                            </div>
+                            <div class="card-footer">
+                                <div class="card-stat">
+                                    <i class="fas fa-users"></i> ${channel.members} عضو
                                 </div>
-                                <div class="card-footer">
-                                    <div class="card-stat">
-                                        <i class="fas fa-users"></i> ${channel.members} عضو
-                                    </div>
-                                    <div class="card-stat">
-                                        <i class="fas fa-comments"></i> ${channel.messages} رسالة
-                                    </div>
-                                    <div class="card-stat">
-                                        ${roleEmoji} ${channel.role}
-                                    </div>
+                                <div class="card-stat">
+                                    <i class="fas fa-comments"></i> ${channel.messages} رسالة
+                                </div>
+                                <div class="card-stat">
+                                    ${roleEmoji} ${channel.role}
                                 </div>
                             </div>
-                        `;
-                    });
+                        </div>
+                    `;
+                });
 
-                    channelsList.innerHTML = html;
-                }, 1000);
+                channelsList.innerHTML = html;
 
             } catch (error) {
+                console.error('Error loading channels:', error);
                 showAlert('حدث خطأ في تحميل القنوات', 'error');
                 channelsList.innerHTML = `
                     <div class="empty-state">
@@ -636,96 +771,284 @@
         }
 
         // فتح محادثة
-        function openChat(chatId) {
+        async function openChat(chatId) {
             showAlert(`جاري فتح المحادثة #${chatId}...`, 'info');
-            tg.sendData(`open_chat_${chatId}`);
-            setTimeout(() => tg.close(), 1500);
+            
+            try {
+                if (tg && tg.sendData) {
+                    tg.sendData(JSON.stringify({
+                        action: 'open_chat',
+                        chatId: chatId,
+                        userId: userId,
+                        token: userToken
+                    }));
+                } else {
+                    // محاكاة الإرسال في حالة عدم وجود Telegram Web App
+                    console.log('Opening chat:', chatId);
+                    showAlert('تم فتح المحادثة (وضع العرض)', 'success');
+                }
+                
+                // الانتظار قليلاً قبل الإغلاق
+                setTimeout(() => {
+                    if (tg && tg.close) {
+                        tg.close();
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error opening chat:', error);
+                showAlert('تعذر فتح المحادثة', 'error');
+            }
         }
 
         // فتح قناة
-        function openChannel(channelId) {
+        async function openChannel(channelId) {
             showAlert(`جاري فتح القناة #${channelId}...`, 'info');
-            tg.sendData(`open_channel_${channelId}`);
-            setTimeout(() => tg.close(), 1500);
+            
+            try {
+                if (tg && tg.sendData) {
+                    tg.sendData(JSON.stringify({
+                        action: 'open_channel',
+                        channelId: channelId,
+                        userId: userId,
+                        token: userToken
+                    }));
+                } else {
+                    console.log('Opening channel:', channelId);
+                    showAlert('تم فتح القناة (وضع العرض)', 'success');
+                }
+                
+                setTimeout(() => {
+                    if (tg && tg.close) {
+                        tg.close();
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error opening channel:', error);
+                showAlert('تعذر فتح القناة', 'error');
+            }
         }
 
         // بدء محادثة عشوائية
-        function startRandomChat() {
+        async function startRandomChat() {
             showAlert('جاري البحث عن شخص عشوائي...', 'info');
-            tg.sendData('start_random_chat');
-            setTimeout(() => tg.close(), 1500);
+            
+            try {
+                if (tg && tg.sendData) {
+                    tg.sendData(JSON.stringify({
+                        action: 'start_random_chat',
+                        userId: userId,
+                        token: userToken
+                    }));
+                } else {
+                    console.log('Starting random chat');
+                    showAlert('جاري البحث عن شخص عشوائي (وضع العرض)', 'info');
+                    
+                    // محاكاة نجاح البحث
+                    setTimeout(() => {
+                        showAlert('تم العثور على شخص! ابدأ المحادثة الآن', 'success');
+                    }, 2000);
+                }
+                
+                setTimeout(() => {
+                    if (tg && tg.close) {
+                        tg.close();
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error starting random chat:', error);
+                showAlert('تعذر بدء المحادثة العشوائية', 'error');
+            }
         }
 
         // إنشاء قناة
-        function createChannel() {
+        async function createChannel() {
             showAlert('جاري فتح إنشاء قناة جديدة...', 'info');
-            tg.sendData('create_channel');
-            setTimeout(() => tg.close(), 1500);
+            
+            try {
+                if (tg && tg.sendData) {
+                    tg.sendData(JSON.stringify({
+                        action: 'create_channel',
+                        userId: userId,
+                        token: userToken
+                    }));
+                } else {
+                    console.log('Creating channel');
+                    showAlert('فتح إنشاء قناة جديدة (وضع العرض)', 'info');
+                }
+                
+                setTimeout(() => {
+                    if (tg && tg.close) {
+                        tg.close();
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error creating channel:', error);
+                showAlert('تعذر إنشاء القناة', 'error');
+            }
         }
 
         // مشاركة الرابط الشخصي
-        function shareMyLink() {
+        async function shareMyLink() {
             showAlert('جاري تحضير رابطك الشخصي...', 'info');
-            tg.sendData('share_my_link');
-            setTimeout(() => tg.close(), 1500);
+            
+            try {
+                if (tg && tg.sendData) {
+                    tg.sendData(JSON.stringify({
+                        action: 'share_my_link',
+                        userId: userId,
+                        token: userToken
+                    }));
+                } else {
+                    console.log('Sharing link');
+                    
+                    // محاكاة الرابط
+                    const mockLink = `https://t.me/nox_bot?start=${userId}`;
+                    showAlert(`رابطك الشخصي: ${mockLink}`, 'success');
+                    
+                    // محاولة المشاركة
+                    if (navigator.share) {
+                        try {
+                            await navigator.share({
+                                title: 'رابط Nox الشخصي',
+                                text: 'تواصل معي بشكل مجهول على Nox',
+                                url: mockLink
+                            });
+                        } catch (shareError) {
+                            console.log('Share API not available or cancelled');
+                        }
+                    }
+                }
+                
+                setTimeout(() => {
+                    if (tg && tg.close) {
+                        tg.close();
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error sharing link:', error);
+                showAlert('تعذر مشاركة الرابط', 'error');
+            }
         }
 
         // استكشاف القنوات
-        function exploreChannels() {
+        async function exploreChannels() {
             showAlert('جاري فتح استكشاف القنوات...', 'info');
-            tg.sendData('explore_channels');
-            setTimeout(() => tg.close(), 1500);
+            
+            try {
+                if (tg && tg.sendData) {
+                    tg.sendData(JSON.stringify({
+                        action: 'explore_channels',
+                        userId: userId,
+                        token: userToken
+                    }));
+                } else {
+                    console.log('Exploring channels');
+                    showAlert('فتح استكشاف القنوات (وضع العرض)', 'info');
+                }
+                
+                setTimeout(() => {
+                    if (tg && tg.close) {
+                        tg.close();
+                    }
+                }, 1500);
+                
+            } catch (error) {
+                console.error('Error exploring channels:', error);
+                showAlert('تعذر استكشاف القنوات', 'error');
+            }
         }
 
         // تحديث البيانات
-        function refreshData() {
+        async function refreshData() {
             showAlert('جاري تحديث البيانات...', 'info');
-            if (currentTab === 'chats') {
-                loadChats();
-            } else if (currentTab === 'channels') {
-                loadChannels();
-            }
             
-            // إخفاء التنبيه بعد 2 ثانية
-            setTimeout(() => {
-                document.getElementById('alert').classList.remove('show');
-            }, 2000);
+            try {
+                if (currentTab === 'chats') {
+                    await loadChats();
+                } else if (currentTab === 'channels') {
+                    await loadChannels();
+                }
+                
+                setTimeout(() => {
+                    document.getElementById('alert').classList.remove('show');
+                }, 2000);
+                
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                showAlert('تعذر تحديث البيانات', 'error');
+            }
         }
 
         // عرض تنبيه
         function showAlert(message, type = 'info') {
             const alertEl = document.getElementById('alert');
             alertEl.textContent = message;
+            alertEl.className = 'alert'; // إعادة تعيين الفئات
             
-            // تخصيص الألوان حسب النوع
-            switch(type) {
-                case 'error':
-                    alertEl.style.background = 'rgba(255, 71, 87, 0.1)';
-                    alertEl.style.borderColor = 'rgba(255, 71, 87, 0.3)';
-                    alertEl.style.color = '#ff6b81';
-                    break;
-                case 'success':
-                    alertEl.style.background = 'rgba(46, 204, 113, 0.1)';
-                    alertEl.style.borderColor = 'rgba(46, 204, 113, 0.3)';
-                    alertEl.style.color = '#2ecc71';
-                    break;
-                case 'warning':
-                    alertEl.style.background = 'rgba(241, 196, 15, 0.1)';
-                    alertEl.style.borderColor = 'rgba(241, 196, 15, 0.3)';
-                    alertEl.style.color = '#f1c40f';
-                    break;
-                default:
-                    alertEl.style.background = 'rgba(52, 152, 219, 0.1)';
-                    alertEl.style.borderColor = 'rgba(52, 152, 219, 0.3)';
-                    alertEl.style.color = '#3498db';
-            }
-            
+            // إضافة فئة النوع
+            alertEl.classList.add(type);
             alertEl.classList.add('show');
             
             // إخفاء تلقائي بعد 3 ثوان
             setTimeout(() => {
                 alertEl.classList.remove('show');
             }, 3000);
+        }
+
+        // إرسال بيانات للبوت
+        async function sendToBot(action, data) {
+            try {
+                // في حالة التطبيق الحقيقي، هذا سيرسل البيانات للبوت عبر Telegram Web App
+                if (tg && tg.sendData) {
+                    tg.sendData(JSON.stringify({
+                        action: action,
+                        ...data
+                    }));
+                    return { success: true };
+                }
+                
+                // محاكاة الاستجابة في وضع العرض
+                return { success: true, message: 'Data sent successfully' };
+                
+            } catch (error) {
+                console.error('Error sending to bot:', error);
+                return { success: false, error: error.message };
+            }
+        }
+
+        // جلب بيانات من البوت
+        async function fetchFromBot(action, data) {
+            try {
+                // في التطبيق الحقيقي، هذا سيتم استبداله باستدعاء API حقيقي
+                console.log('Fetching from bot:', action, data);
+                
+                // محاكاة استجابة API
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                // بيانات تجريبية
+                if (action === 'get_chats') {
+                    return {
+                        success: true,
+                        chats: getMockChats()
+                    };
+                } else if (action === 'get_channels') {
+                    return {
+                        success: true,
+                        channels: getMockChannels()
+                    };
+                }
+                
+                return { success: false, error: 'Unknown action' };
+                
+            } catch (error) {
+                console.error('Error fetching from bot:', error);
+                return { success: false, error: error.message };
+            }
         }
 
         // بيانات تجريبية للمحادثات
@@ -814,37 +1137,30 @@
             }
         }
 
-        // تحديث البيانات كل دقيقة
-        setInterval(() => {
-            if (currentTab === 'chats') {
-                loadChats();
-            } else if (currentTab === 'channels') {
-                loadChannels();
-            }
-        }, 60000);
-
-        // التعامل مع زر العودة
-        tg.BackButton.onClick(() => {
-            if (currentTab !== 'chats') {
-                switchTab('chats');
-                tg.BackButton.hide();
-            } else {
-                tg.close();
-            }
-        });
-
-        // إظهار زر العودة عند عدم وجوده في المحادثات
-        document.addEventListener('click', function(e) {
-            if (!e.target.closest('.tab[data-tab="chats"]') && currentTab !== 'chats') {
-                tg.BackButton.show();
-            }
-        });
-
-        // التعامل مع الأخطاء
+        // التعامل مع الأخطاء العامة
         window.addEventListener('error', function(e) {
-            showAlert('حدث خطأ غير متوقع', 'error');
             console.error('Web App Error:', e.error);
+            showAlert('حدث خطأ غير متوقع في التطبيق', 'error');
         });
+
+        // منع التحديث التلقائي عند مغادرة الصفحة
+        window.addEventListener('beforeunload', function(e) {
+            if (isInitialized) {
+                e.preventDefault();
+                e.returnValue = 'هل تريد مغادرة التطبيق؟';
+            }
+        });
+
+        // تحديث البيانات كل دقيقة
+        if (isInitialized) {
+            setInterval(() => {
+                if (currentTab === 'chats') {
+                    loadChats();
+                } else if (currentTab === 'channels') {
+                    loadChannels();
+                }
+            }, 60000);
+        }
     </script>
 </body>
 </html>
