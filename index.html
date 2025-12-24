@@ -3,651 +3,848 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nox - تطبيق المحادثات السرية</title>
+    <title>Nox - محادثات مجهولة</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        :root {
-            --primary: #0088cc;
-            --dark: #0a0a0a;
-            --dark-light: #1a1a1a;
-            --gray: #888;
-            --white: #ffffff;
-        }
-        
+        /* إعادة تعيين CSS */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Segoe UI', 'Tahoma', Geneva, Verdana, sans-serif;
-            background-color: var(--dark);
-            color: var(--white);
-            line-height: 1.6;
+            font-family: 'Segoe UI', 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #ffffff;
+            min-height: 100vh;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
         }
-        
-        .container {
-            max-width: 100%;
-            padding: 15px;
-        }
-        
-        /* التبويبات */
-        .tabs {
-            display: flex;
-            background: var(--dark-light);
-            border-radius: 15px;
-            padding: 5px;
-            margin-bottom: 20px;
+
+        /* الشريط العلوي */
+        .app-header {
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            padding: 20px 15px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             position: sticky;
             top: 0;
-            z-index: 100;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
         }
-        
+
+        .app-header h1 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            background: linear-gradient(45deg, #0088cc, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .app-header p {
+            font-size: 0.9rem;
+            color: #aaa;
+            opacity: 0.9;
+        }
+
+        /* علامات التبويب */
+        .tabs-container {
+            display: flex;
+            background: rgba(20, 20, 30, 0.9);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 95px;
+            z-index: 999;
+            backdrop-filter: blur(10px);
+        }
+
         .tab {
             flex: 1;
-            padding: 12px;
             text-align: center;
+            padding: 15px 10px;
             cursor: pointer;
-            color: var(--gray);
             transition: all 0.3s ease;
-            border-radius: 12px;
-            font-weight: 500;
+            font-size: 1rem;
+            color: #aaa;
+            border-bottom: 3px solid transparent;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 8px;
+            gap: 5px;
         }
-        
+
+        .tab i {
+            font-size: 1.2rem;
+        }
+
+        .tab:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
         .tab.active {
-            background: var(--primary);
-            color: var(--white);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 136, 204, 0.3);
+            color: #0088cc;
+            border-bottom-color: #0088cc;
+            background: rgba(0, 136, 204, 0.1);
         }
-        
-        /* البطاقات */
+
+        /* محتوى التبويبات */
+        .tab-content {
+            display: none;
+            padding: 15px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* بطاقات */
         .card {
-            background: linear-gradient(145deg, var(--dark-light), #161616);
+            background: rgba(30, 30, 46, 0.8);
             border-radius: 15px;
-            padding: 18px;
+            padding: 20px;
             margin-bottom: 15px;
-            border-left: 4px solid var(--primary);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(5px);
         }
-        
+
         .card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border-color: #0088cc;
         }
-        
+
         .card-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .card-title {
-            font-size: 16px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .card-title i {
-            color: var(--primary);
-        }
-        
-        .card-time {
-            font-size: 12px;
-            color: var(--gray);
-        }
-        
-        .card-message {
-            color: #ccc;
-            font-size: 14px;
             margin-bottom: 15px;
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
         }
-        
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .card-badge {
+            background: linear-gradient(45deg, #0088cc, #00d4ff);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .card-content {
+            color: #ccc;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+
         .card-footer {
             display: flex;
             justify-content: space-between;
+            color: #888;
+            font-size: 0.85rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            padding-top: 10px;
+        }
+
+        .card-stat {
+            display: flex;
             align-items: center;
+            gap: 5px;
         }
-        
-        .card-badge {
-            background: rgba(0, 136, 204, 0.2);
-            color: var(--primary);
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
+
+        /* أزرار */
         .btn {
-            background: var(--primary);
+            background: linear-gradient(45deg, #0088cc, #00d4ff);
             color: white;
             border: none;
-            padding: 10px 20px;
-            border-radius: 10px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 1rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            width: 100%;
         }
-        
+
         .btn:hover {
-            background: #0077b3;
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 136, 204, 0.4);
         }
-        
+
         .btn-secondary {
-            background: transparent;
-            border: 2px solid var(--primary);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
         }
-        
-        /* حالة التحميل */
-        .loading {
-            text-align: center;
-            padding: 40px 20px;
-            color: var(--gray);
-        }
-        
-        .loading i {
-            font-size: 40px;
-            margin-bottom: 15px;
-            color: var(--primary);
-            animation: spin 1s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        /* شريط البحث */
-        .search-bar {
-            background: var(--dark-light);
-            border-radius: 12px;
-            padding: 12px 15px;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .search-bar input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--white);
-            font-size: 14px;
-            outline: none;
-        }
-        
-        .search-bar i {
-            color: var(--gray);
-        }
-        
-        /* الحالة الفارغة */
+
+        /* حالة فارغة */
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
-            color: var(--gray);
+            padding: 50px 20px;
+            color: #666;
         }
-        
-        .empty-state i {
-            font-size: 50px;
+
+        .empty-icon {
+            font-size: 4rem;
             margin-bottom: 20px;
-            color: var(--primary);
+            opacity: 0.3;
         }
-        
-        .empty-state h3 {
+
+        .empty-title {
+            font-size: 1.3rem;
             margin-bottom: 10px;
-            color: var(--white);
+            color: #999;
         }
-        
-        /* رأس الصفحة */
-        .header {
-            background: linear-gradient(135deg, var(--primary), #006699);
-            padding: 20px;
-            border-radius: 0 0 25px 25px;
-            margin-bottom: 20px;
+
+        .empty-description {
+            font-size: 0.95rem;
+            color: #777;
+            line-height: 1.6;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        /* حالة التحميل */
+        .loading-state {
             text-align: center;
+            padding: 40px 20px;
+            color: #888;
         }
-        
-        .header h1 {
-            font-size: 24px;
-            margin-bottom: 5px;
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top-color: #0088cc;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* زر الفعل العائم */
+        .fab {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #0088cc, #00d4ff);
+            color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(0, 136, 204, 0.5);
+            transition: all 0.3s ease;
+            z-index: 1000;
         }
-        
-        .header p {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 14px;
+
+        .fab:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 25px rgba(0, 136, 204, 0.7);
         }
-        
-        .user-info {
-            background: rgba(255, 255, 255, 0.1);
+
+        /* رسائل التنبيه */
+        .alert {
+            background: rgba(255, 71, 87, 0.1);
+            border: 1px solid rgba(255, 71, 87, 0.3);
+            color: #ff6b81;
             padding: 12px 15px;
-            border-radius: 12px;
-            margin-top: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: none;
         }
-        
-        .user-points {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-weight: 600;
+
+        .alert.show {
+            display: block;
+            animation: slideIn 0.3s ease;
         }
-        
-        /* الرسوم المتحركة */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
         }
-        
-        .content {
-            animation: fadeIn 0.5s ease;
-        }
-        
-        /* متجاوب */
+
+        /* تحسينات للهواتف */
         @media (max-width: 480px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .tab {
-                font-size: 14px;
-                padding: 10px;
-            }
-            
-            .card {
-                padding: 15px;
-            }
+            .app-header h1 { font-size: 1.5rem; }
+            .tab { padding: 12px 5px; font-size: 0.9rem; }
+            .tab i { font-size: 1rem; }
+            .card { padding: 15px; }
+            .fab { bottom: 20px; right: 20px; width: 50px; height: 50px; }
+        }
+
+        /* تخصيص شريط التمرير */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, #0088cc, #00d4ff);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(45deg, #0099ee, #00e4ff);
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1><i class="fas fa-user-secret"></i> Nox</h1>
-        <p>تطبيق المحادثات السرية المجهولة</p>
-        <div class="user-info">
-            <div>
-                <div id="user-name">جاري التحميل...</div>
-                <div style="font-size: 12px; opacity: 0.8;">مرحباً بك!</div>
-            </div>
-            <div class="user-points">
-                <i class="fas fa-coins"></i>
-                <span id="user-points">0</span> نقطة
-            </div>
+    <!-- الشريط العلوي -->
+    <div class="app-header">
+        <h1><i class="fas fa-moon"></i> Nox</h1>
+        <p>نظام المحادثات المجهولة المزدوجة</p>
+    </div>
+
+    <!-- علامات التبويب -->
+    <div class="tabs-container">
+        <div class="tab active" data-tab="chats">
+            <i class="fas fa-comments"></i>
+            <span>المحادثات</span>
+        </div>
+        <div class="tab" data-tab="channels">
+            <i class="fas fa-users"></i>
+            <span>القنوات</span>
+        </div>
+        <div class="tab" data-tab="new">
+            <i class="fas fa-plus-circle"></i>
+            <span>جديد</span>
         </div>
     </div>
-    
-    <div class="container">
-        <div class="search-bar">
-            <i class="fas fa-search"></i>
-            <input type="text" id="search-input" placeholder="ابحث في المحادثات أو المجموعات...">
-        </div>
-        
-        <div class="tabs">
-            <div class="tab active" onclick="switchTab('chats')">
-                <i class="fas fa-comments"></i>
-                <span>المحادثات</span>
-            </div>
-            <div class="tab" onclick="switchTab('groups')">
-                <i class="fas fa-users"></i>
-                <span>المجموعات</span>
-            </div>
-            <div class="tab" onclick="switchTab('new')">
-                <i class="fas fa-plus-circle"></i>
-                <span>جديد</span>
-            </div>
-        </div>
-        
-        <div id="chats" class="content">
-            <div id="chat-list">
-                <div class="loading">
-                    <i class="fas fa-spinner"></i>
-                    <p>جاري تحميل محادثاتك السرية...</p>
-                </div>
-            </div>
-        </div>
-        
-        <div id="groups" class="content" style="display:none;">
-            <div id="group-list">
-                <div class="loading">
-                    <i class="fas fa-spinner"></i>
-                    <p>جاري تحميل مجموعاتك...</p>
-                </div>
-            </div>
-        </div>
-        
-        <div id="new" class="content" style="display:none;">
-            <div style="text-align: center; padding: 30px 20px;">
-                <div style="font-size: 50px; color: var(--primary); margin-bottom: 20px;">
-                    <i class="fas fa-user-plus"></i>
-                </div>
-                <h3 style="margin-bottom: 15px;">ابدأ محادثة جديدة</h3>
-                <p style="color: var(--gray); margin-bottom: 25px;">
-                    شارك رابطك الخاص مع أصدقائك لبدء محادثات سرية مجهولة
-                </p>
-                <button class="btn" onclick="copyInviteLink()">
-                    <i class="fas fa-link"></i>
-                    نسخ رابط الدعوة
-                </button>
-                <p style="margin-top: 20px; color: var(--gray); font-size: 14px;">
-                    <i class="fas fa-info-circle"></i>
-                    سيحصل كل من يفتح الرابط على 5 نقاط مجانية
-                </p>
+
+    <!-- تنبيهات -->
+    <div class="alert" id="alert"></div>
+
+    <!-- محتوى تبويب المحادثات -->
+    <div class="tab-content active" id="chats">
+        <div id="chats-list">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>جاري تحميل محادثاتك...</p>
             </div>
         </div>
     </div>
 
+    <!-- محتوى تبويب القنوات -->
+    <div class="tab-content" id="channels">
+        <div id="channels-list">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>جاري تحميل قنواتك...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- محتوى تبويب جديد -->
+    <div class="tab-content" id="new">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-random"></i> محادثة عشوائية</div>
+                <div class="card-badge">سريع</div>
+            </div>
+            <div class="card-content">
+                تحدث مع شخص مجهول عشوائياً. كل محادثة لها هوية مختلفة ويمكن أن تتحدث مع نفس الشخص في محادثتين مختلفتين!
+            </div>
+            <button class="btn" onclick="startRandomChat()">
+                <i class="fas fa-bolt"></i> بدء محادثة عشوائية
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-broadcast-tower"></i> إنشاء قناة جديدة</div>
+                <div class="card-badge">خاص بك</div>
+            </div>
+            <div class="card-content">
+                أنشئ قناتك المجهولة الخاصة وادعُ الآخرين للانضمام. اختر الاسم والموضوع وابدأ النقاش مع مجتمع مجهول.
+            </div>
+            <button class="btn" onclick="createChannel()">
+                <i class="fas fa-plus"></i> إنشاء قناة
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-link"></i> رابطك الشخصي</div>
+                <div class="card-badge">مشاركة</div>
+            </div>
+            <div class="card-content">
+                شارك رابطك الشخصي مع الآخرين لبدء محادثات مجهولة معك. كل من يفتح الرابط سيبدأ محادثة جديدة مع هوية مجهولة.
+            </div>
+            <button class="btn" onclick="shareMyLink()">
+                <i class="fas fa-share-alt"></i> مشاركة الرابط
+            </button>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-search"></i> استكشاف القنوات</div>
+                <div class="card-badge">اكتشاف</div>
+            </div>
+            <div class="card-content">
+                تصفح القنوات العامة واكتشف مجتمعات مجهولة جديدة. انضم للنقاشات وشارك بأفكارك بشكل مجهول.
+            </div>
+            <button class="btn btn-secondary" onclick="exploreChannels()">
+                <i class="fas fa-compass"></i> استكشاف القنوات
+            </button>
+        </div>
+    </div>
+
+    <!-- زر الفعل العائم -->
+    <div class="fab" onclick="refreshData()">
+        <i class="fas fa-sync-alt"></i>
+    </div>
+
     <script>
-        // تهيئة تطبيق تليجرام
+        // تهيئة Telegram Web App
         let tg = window.Telegram.WebApp;
-        tg.expand();
-        tg.ready();
-        
-        // بيانات المستخدم من تليجرام
-        const user = tg.initDataUnsafe.user;
-        let userChats = [];
-        let userGroups = [];
-        
-        // تهيئة الصفحة
+        let userId = null;
+        let userToken = null;
+        let currentTab = 'chats';
+
+        // تهيئة التطبيق
         document.addEventListener('DOMContentLoaded', function() {
-            if (user) {
-                document.getElementById('user-name').textContent = user.first_name || 'مستخدم';
-                loadUserData();
-                loadChats();
+            tg.expand(); // توسيع التطبيق
+            tg.enableClosingConfirmation(); // تأكيد الإغلاق
+            tg.BackButton.hide(); // إخفاء زر العودة
+
+            // استخراج بيانات المستخدم من الرابط
+            const urlParams = new URLSearchParams(window.location.search);
+            userId = urlParams.get('user_id');
+            userToken = urlParams.get('token');
+
+            if (!userId || !userToken) {
+                showAlert('خطأ في بيانات المستخدم', 'error');
+                setTimeout(() => tg.close(), 2000);
+                return;
             }
+
+            // إعداد علامات التبويب
+            setupTabs();
+            
+            // تحميل البيانات الأولية
+            loadData();
         });
-        
-        // تحميل بيانات المستخدم
-        async function loadUserData() {
-            try {
-                // هنا يمكن إضافة API لجلب نقاط المستخدم
-                document.getElementById('user-points').textContent = '20';
-            } catch (error) {
-                console.error('Error loading user data:', error);
-            }
-        }
-        
-        // تحميل المحادثات (بيانات تجريبية)
-        async function loadChats() {
-            const chatList = document.getElementById('chat-list');
-            
-            // محاكاة تأخير الشبكة
-            setTimeout(() => {
-                // بيانات تجريبية
-                userChats = [
-                    {
-                        id: 1,
-                        name: 'محمد',
-                        lastMessage: 'مرحباً، كيف حالك؟',
-                        time: '10:30 ص',
-                        unread: true
-                    },
-                    {
-                        id: 2,
-                        name: 'أحمد',
-                        lastMessage: 'شكراً لك على المساعدة',
-                        time: 'أمس',
-                        unread: false
-                    },
-                    {
-                        id: 3,
-                        name: 'سارة',
-                        lastMessage: 'هل يمكننا التحدث؟',
-                        time: '2 يوم',
-                        unread: true
-                    },
-                    {
-                        id: 4,
-                        name: 'علي',
-                        lastMessage: '👍',
-                        time: 'أسبوع',
-                        unread: false
-                    }
-                ];
-                
-                displayChats(userChats);
-            }, 1000);
-        }
-        
-        // تحميل المجموعات (بيانات تجريبية)
-        async function loadGroups() {
-            const groupList = document.getElementById('group-list');
-            
-            setTimeout(() => {
-                userGroups = [
-                    {
-                        id: 1,
-                        name: 'نادي المطورين',
-                        members: 45,
-                        description: 'مجتمع للمبرمجين والمطورين'
-                    },
-                    {
-                        id: 2,
-                        name: 'كتاب وأدب',
-                        members: 120,
-                        description: 'نناقش الكتب والأدب'
-                    }
-                ];
-                
-                displayGroups(userGroups);
-            }, 1000);
-        }
-        
-        // عرض المحادثات
-        function displayChats(chats) {
-            const chatList = document.getElementById('chat-list');
-            
-            if (chats.length === 0) {
-                chatList.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-comment-slash"></i>
-                        <h3>لا توجد محادثات</h3>
-                        <p>شارك رابطك لبدء محادثات جديدة</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            let html = '';
-            chats.forEach(chat => {
-                html += `
-                    <div class="card" onclick="openChat(${chat.id})">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <i class="fas fa-user-circle"></i>
-                                ${chat.name}
-                                ${chat.unread ? '<span style="color: red; font-size: 10px;">●</span>' : ''}
-                            </div>
-                            <div class="card-time">${chat.time}</div>
-                        </div>
-                        <div class="card-message">${chat.lastMessage}</div>
-                        <div class="card-footer">
-                            <div class="card-badge">محادثة سرية</div>
-                            <button class="btn" style="padding: 6px 15px; font-size: 12px;" onclick="openChat(${chat.id})">
-                                <i class="fas fa-reply"></i>
-                                رد
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            chatList.innerHTML = html;
-        }
-        
-        // عرض المجموعات
-        function displayGroups(groups) {
-            const groupList = document.getElementById('group-list');
-            
-            if (groups.length === 0) {
-                groupList.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-users-slash"></i>
-                        <h3>لا توجد مجموعات</h3>
-                        <p>أنشئ مجموعة جديدة أو انضم إلى واحدة</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            let html = '';
-            groups.forEach(group => {
-                html += `
-                    <div class="card">
-                        <div class="card-header">
-                            <div class="card-title">
-                                <i class="fas fa-users"></i>
-                                ${group.name}
-                            </div>
-                            <div class="card-badge">${group.members} عضو</div>
-                        </div>
-                        <div class="card-message">${group.description}</div>
-                        <div class="card-footer">
-                            <button class="btn" style="padding: 8px 20px;" onclick="joinGroup(${group.id})">
-                                <i class="fas fa-door-open"></i>
-                                دخول المجموعة
-                            </button>
-                        </div>
-                    </div>
-                `;
-            });
-            
-            groupList.innerHTML = html;
-        }
-        
-        // تبديل التبويبات
-        function switchTab(tabName) {
-            // إخفاء كل المحتويات
-            document.querySelectorAll('.content').forEach(content => {
-                content.style.display = 'none';
-            });
-            
-            // إزالة النشاط من كل التبويبات
+
+        // إعداد علامات التبويب
+        function setupTabs() {
             document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    switchTab(tabId);
+                });
             });
+        }
+
+        // تبديل علامات التبويب
+        function switchTab(tabId) {
+            // تحديث علامات التبويب النشطة
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             
-            // إظهار المحتوى المطلوب
-            document.getElementById(tabName).style.display = 'block';
+            document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
             
-            // إضافة النشاط للتبويب المحدد
-            event.currentTarget.classList.add('active');
+            currentTab = tabId;
             
-            // تحميل البيانات عند التبديل
-            if (tabName === 'chats' && userChats.length === 0) {
+            // تحميل البيانات الخاصة بالتبويب
+            if (tabId === 'chats') {
                 loadChats();
-            } else if (tabName === 'groups' && userGroups.length === 0) {
-                loadGroups();
+            } else if (tabId === 'channels') {
+                loadChannels();
             }
         }
-        
+
+        // تحميل جميع البيانات
+        async function loadData() {
+            await loadChats();
+            await loadChannels();
+        }
+
+        // تحميل المحادثات
+        async function loadChats() {
+            const chatsList = document.getElementById('chats-list');
+            chatsList.innerHTML = `
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>جاري تحميل محادثاتك...</p>
+                </div>
+            `;
+
+            try {
+                // محاكاة بيانات للاختبار
+                setTimeout(() => {
+                    const chats = getMockChats();
+                    
+                    if (chats.length === 0) {
+                        chatsList.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-icon"><i class="fas fa-comment-slash"></i></div>
+                                <div class="empty-title">لا توجد محادثات</div>
+                                <div class="empty-description">
+                                    لم تبدأ أو تتلقى أي محادثات بعد. شارك رابطك الشخصي أو ابدأ محادثة عشوائية.
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    let html = '';
+                    chats.forEach(chat => {
+                        html += `
+                            <div class="card" onclick="openChat(${chat.id})">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="fas fa-user-secret"></i> ${chat.alias}
+                                    </div>
+                                    ${chat.unread > 0 ? `<div class="card-badge">${chat.unread}</div>` : ''}
+                                </div>
+                                <div class="card-content">
+                                    ${chat.lastMessage}
+                                </div>
+                                <div class="card-footer">
+                                    <div class="card-stat">
+                                        <i class="far fa-clock"></i> ${chat.time}
+                                    </div>
+                                    <div class="card-stat">
+                                        <i class="fas fa-comment"></i> ${chat.messageCount} رسالة
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    chatsList.innerHTML = html;
+                }, 1000);
+
+            } catch (error) {
+                showAlert('حدث خطأ في تحميل المحادثات', 'error');
+                chatsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="empty-title">حدث خطأ</div>
+                        <div class="empty-description">
+                            تعذر تحميل المحادثات. يرجى المحاولة مرة أخرى.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // تحميل القنوات
+        async function loadChannels() {
+            const channelsList = document.getElementById('channels-list');
+            channelsList.innerHTML = `
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>جاري تحميل قنواتك...</p>
+                </div>
+            `;
+
+            try {
+                setTimeout(() => {
+                    const channels = getMockChannels();
+                    
+                    if (channels.length === 0) {
+                        channelsList.innerHTML = `
+                            <div class="empty-state">
+                                <div class="empty-icon"><i class="fas fa-users-slash"></i></div>
+                                <div class="empty-title">لا توجد قنوات</div>
+                                <div class="empty-description">
+                                    لم تنشئ أو تنضم لأي قنوات بعد. أنشئ قناتك الأولى أو انضم لقنوات عامة.
+                                </div>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    let html = '';
+                    channels.forEach(channel => {
+                        const roleEmoji = getRoleEmoji(channel.role);
+                        
+                        html += `
+                            <div class="card" onclick="openChannel(${channel.id})">
+                                <div class="card-header">
+                                    <div class="card-title">
+                                        <i class="fas fa-hashtag"></i> ${channel.name}
+                                    </div>
+                                    <div class="card-badge">${roleEmoji} ${channel.role}</div>
+                                </div>
+                                <div class="card-content">
+                                    ${channel.topic}
+                                </div>
+                                <div class="card-footer">
+                                    <div class="card-stat">
+                                        <i class="fas fa-users"></i> ${channel.members} عضو
+                                    </div>
+                                    <div class="card-stat">
+                                        <i class="fas fa-comments"></i> ${channel.messages} رسالة
+                                    </div>
+                                    <div class="card-stat">
+                                        ${roleEmoji} ${channel.role}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    channelsList.innerHTML = html;
+                }, 1000);
+
+            } catch (error) {
+                showAlert('حدث خطأ في تحميل القنوات', 'error');
+                channelsList.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                        <div class="empty-title">حدث خطأ</div>
+                        <div class="empty-description">
+                            تعذر تحميل القنوات. يرجى المحاولة مرة أخرى.
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
         // فتح محادثة
         function openChat(chatId) {
-            // إرسال بيانات للبوت لفتح المحادثة
-            tg.sendData(JSON.stringify({
-                action: 'open_chat',
-                chat_id: chatId
-            }));
-            
-            // إغلاق تطبيق الويب
-            tg.close();
+            showAlert(`جاري فتح المحادثة #${chatId}...`, 'info');
+            tg.sendData(`open_chat_${chatId}`);
+            setTimeout(() => tg.close(), 1500);
         }
-        
-        // الانضمام لمجموعة
-        function joinGroup(groupId) {
-            tg.showPopup({
-                title: 'الانضمام للمجموعة',
-                message: 'هل تريد الانضمام لهذه المجموعة؟',
-                buttons: [
-                    {id: 'yes', type: 'ok', text: 'نعم'},
-                    {id: 'no', type: 'cancel', text: 'لا'}
-                ]
-            }, function(buttonId) {
-                if (buttonId === 'yes') {
-                    tg.sendData(JSON.stringify({
-                        action: 'join_group',
-                        group_id: groupId
-                    }));
-                    tg.showAlert('تم الانضمام للمجموعة بنجاح!');
+
+        // فتح قناة
+        function openChannel(channelId) {
+            showAlert(`جاري فتح القناة #${channelId}...`, 'info');
+            tg.sendData(`open_channel_${channelId}`);
+            setTimeout(() => tg.close(), 1500);
+        }
+
+        // بدء محادثة عشوائية
+        function startRandomChat() {
+            showAlert('جاري البحث عن شخص عشوائي...', 'info');
+            tg.sendData('start_random_chat');
+            setTimeout(() => tg.close(), 1500);
+        }
+
+        // إنشاء قناة
+        function createChannel() {
+            showAlert('جاري فتح إنشاء قناة جديدة...', 'info');
+            tg.sendData('create_channel');
+            setTimeout(() => tg.close(), 1500);
+        }
+
+        // مشاركة الرابط الشخصي
+        function shareMyLink() {
+            showAlert('جاري تحضير رابطك الشخصي...', 'info');
+            tg.sendData('share_my_link');
+            setTimeout(() => tg.close(), 1500);
+        }
+
+        // استكشاف القنوات
+        function exploreChannels() {
+            showAlert('جاري فتح استكشاف القنوات...', 'info');
+            tg.sendData('explore_channels');
+            setTimeout(() => tg.close(), 1500);
+        }
+
+        // تحديث البيانات
+        function refreshData() {
+            showAlert('جاري تحديث البيانات...', 'info');
+            if (currentTab === 'chats') {
+                loadChats();
+            } else if (currentTab === 'channels') {
+                loadChannels();
+            }
+            
+            // إخفاء التنبيه بعد 2 ثانية
+            setTimeout(() => {
+                document.getElementById('alert').classList.remove('show');
+            }, 2000);
+        }
+
+        // عرض تنبيه
+        function showAlert(message, type = 'info') {
+            const alertEl = document.getElementById('alert');
+            alertEl.textContent = message;
+            
+            // تخصيص الألوان حسب النوع
+            switch(type) {
+                case 'error':
+                    alertEl.style.background = 'rgba(255, 71, 87, 0.1)';
+                    alertEl.style.borderColor = 'rgba(255, 71, 87, 0.3)';
+                    alertEl.style.color = '#ff6b81';
+                    break;
+                case 'success':
+                    alertEl.style.background = 'rgba(46, 204, 113, 0.1)';
+                    alertEl.style.borderColor = 'rgba(46, 204, 113, 0.3)';
+                    alertEl.style.color = '#2ecc71';
+                    break;
+                case 'warning':
+                    alertEl.style.background = 'rgba(241, 196, 15, 0.1)';
+                    alertEl.style.borderColor = 'rgba(241, 196, 15, 0.3)';
+                    alertEl.style.color = '#f1c40f';
+                    break;
+                default:
+                    alertEl.style.background = 'rgba(52, 152, 219, 0.1)';
+                    alertEl.style.borderColor = 'rgba(52, 152, 219, 0.3)';
+                    alertEl.style.color = '#3498db';
+            }
+            
+            alertEl.classList.add('show');
+            
+            // إخفاء تلقائي بعد 3 ثوان
+            setTimeout(() => {
+                alertEl.classList.remove('show');
+            }, 3000);
+        }
+
+        // بيانات تجريبية للمحادثات
+        function getMockChats() {
+            return [
+                {
+                    id: 1,
+                    alias: "الظل الغامض #1234",
+                    lastMessage: "مرحباً، كيف حالك اليوم؟",
+                    time: "10:30",
+                    messageCount: 15,
+                    unread: 2
+                },
+                {
+                    id: 2,
+                    alias: "الشبح الصامت #5678",
+                    lastMessage: "شكراً لك على المحادثة الرائعة",
+                    time: "أمس",
+                    messageCount: 8,
+                    unread: 0
+                },
+                {
+                    id: 3,
+                    alias: "الليل الهادئ #9012",
+                    lastMessage: "نلتقي قريباً إن شاء الله",
+                    time: "3 أيام",
+                    messageCount: 25,
+                    unread: 5
+                },
+                {
+                    id: 4,
+                    alias: "السر المخفي #3456",
+                    lastMessage: "أريد أن أشاركك فكرة مهمة",
+                    time: "أسبوع",
+                    messageCount: 3,
+                    unread: 1
                 }
-            });
+            ];
         }
-        
-        // نسخ رابط الدعوة
-        function copyInviteLink() {
-            const inviteLink = `https://t.me/${tg.initDataUnsafe.user.username || 'your_bot'}?start=${user.id}`;
-            
-            // نسخ لل clipboard
-            navigator.clipboard.writeText(inviteLink).then(() => {
-                tg.showAlert('تم نسخ رابط الدعوة إلى الحافظة!');
-            });
-        }
-        
-        // البحث
-        document.getElementById('search-input').addEventListener('input', function(e) {
-            const searchTerm = e.target.value.toLowerCase();
-            
-            if (searchTerm) {
-                // تصفية المحادثات
-                const filteredChats = userChats.filter(chat => 
-                    chat.name.toLowerCase().includes(searchTerm) ||
-                    chat.lastMessage.toLowerCase().includes(searchTerm)
-                );
-                
-                // تصفية المجموعات
-                const filteredGroups = userGroups.filter(group => 
-                    group.name.toLowerCase().includes(searchTerm) ||
-                    group.description.toLowerCase().includes(searchTerm)
-                );
-                
-                // عرض النتائج
-                if (document.getElementById('chats').style.display !== 'none') {
-                    displayChats(filteredChats);
-                } else if (document.getElementById('groups').style.display !== 'none') {
-                    displayGroups(filteredGroups);
+
+        // بيانات تجريبية للقنوات
+        function getMockChannels() {
+            return [
+                {
+                    id: 1,
+                    name: "مقهى الكتاب المجهولين",
+                    topic: "مناقشات أدبية وفلسفية مجهولة",
+                    members: 42,
+                    messages: 128,
+                    role: "مالك"
+                },
+                {
+                    id: 2,
+                    name: "نادي الفلسفة الخفية",
+                    topic: "حوارات فلسفية عميقة وأسئلة وجودية",
+                    members: 28,
+                    messages: 89,
+                    role: "مشرف"
+                },
+                {
+                    id: 3,
+                    name: "مجتمع المبرمجين السري",
+                    topic: "تبادل خبرات البرمجة والتطوير",
+                    members: 56,
+                    messages: 210,
+                    role: "عضو"
+                },
+                {
+                    id: 4,
+                    name: "حديقة الأفكار المجهولة",
+                    topic: "مشاركة الأفكار الإبداعية والابتكارات",
+                    members: 34,
+                    messages: 67,
+                    role: "عضو"
                 }
+            ];
+        }
+
+        // الحصول على رمز الدور
+        function getRoleEmoji(role) {
+            switch(role) {
+                case 'مالك': return '👑';
+                case 'مشرف': return '👮';
+                case 'مراقب': return '🛡️';
+                default: return '👤';
+            }
+        }
+
+        // تحديث البيانات كل دقيقة
+        setInterval(() => {
+            if (currentTab === 'chats') {
+                loadChats();
+            } else if (currentTab === 'channels') {
+                loadChannels();
+            }
+        }, 60000);
+
+        // التعامل مع زر العودة
+        tg.BackButton.onClick(() => {
+            if (currentTab !== 'chats') {
+                switchTab('chats');
+                tg.BackButton.hide();
             } else {
-                // إعادة عرض كل البيانات
-                if (document.getElementById('chats').style.display !== 'none') {
-                    displayChats(userChats);
-                } else if (document.getElementById('groups').style.display !== 'none') {
-                    displayGroups(userGroups);
-                }
+                tg.close();
             }
         });
-        
-        // تحديث البيانات كل 30 ثانية
-        setInterval(() => {
-            if (document.getElementById('chats').style.display !== 'none') {
-                loadChats();
+
+        // إظهار زر العودة عند عدم وجوده في المحادثات
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.tab[data-tab="chats"]') && currentTab !== 'chats') {
+                tg.BackButton.show();
             }
-        }, 30000);
+        });
+
+        // التعامل مع الأخطاء
+        window.addEventListener('error', function(e) {
+            showAlert('حدث خطأ غير متوقع', 'error');
+            console.error('Web App Error:', e.error);
+        });
     </script>
 </body>
 </html>
