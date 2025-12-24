@@ -6,51 +6,49 @@
     <title>Nox App</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background-color: #0f0f0f; color: white; margin: 0; padding: 0; }
-        .tabs { display: flex; background: #1a1a1a; position: sticky; top: 0; }
-        .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; border-bottom: 2px solid transparent; }
-        .tab.active { border-bottom: 2px solid #0088cc; color: #0088cc; }
-        .content { padding: 20px; display: none; }
-        .content.active { display: block; }
-        .chat-item { background: #222; padding: 15px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; }
-        .btn-action { background: #0088cc; color: white; border: none; padding: 5px 10px; border-radius: 5px; }
+        body { font-family: 'Segoe UI', sans-serif; background-color: #0a0a0a; color: white; margin: 0; }
+        .tabs { display: flex; background: #161616; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        .tab { flex: 1; padding: 15px; text-align: center; cursor: pointer; color: #888; transition: 0.3s; }
+        .tab.active { color: #0088cc; border-bottom: 3px solid #0088cc; font-weight: bold; }
+        .content { padding: 15px; }
+        .card { background: #1c1c1c; border-radius: 12px; padding: 15px; margin-bottom: 12px; border: 1px solid #333; display: flex; justify-content: space-between; align-items: center; }
+        .card h4 { margin: 0; font-size: 16px; }
+        .btn { background: #0088cc; color: white; border: none; padding: 8px 15px; border-radius: 8px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="tabs">
-        <div class="tab active" onclick="openTab('chats')">الشاتات الخاصة</div>
-        <div class="tab" onclick="openTab('groups')">الجروبات السرية</div>
+        <div class="tab active" onclick="switchTab('chats')">📬 المحادثات</div>
+        <div class="tab" onclick="switchTab('groups')">👥 الجروبات</div>
     </div>
 
-    <div id="chats" class="content active">
-        <h3>المحادثات المجهولة</h3>
+    <div id="chats" class="content">
         <div id="chat-list">
-            <div class="chat-item">
-                <span>مجهول السحاب</span>
-                <button class="btn-action">فتح النافذة</button>
-            </div>
+            <p style="text-align:center; color:#666;">جاري تحميل محادثاتك السرية...</p>
         </div>
     </div>
 
-    <div id="groups" class="content">
-        <h3>المجتمعات التي انضممت إليها</h3>
+    <div id="groups" class="content" style="display:none;">
         <div id="group-list">
-            <div class="chat-item">
-                <span>جروب Nox العام</span>
-                <button class="btn-action">دخول</button>
-            </div>
+            <p style="text-align:center; color:#666;">لا توجد جروبات نشطة حالياً.</p>
         </div>
     </div>
 
     <script>
         let tg = window.Telegram.WebApp;
-        tg.expand(); // لفتح النافذة كاملة
+        tg.expand();
 
-        function openTab(tabId) {
-            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+        function switchTab(tab) {
+            document.querySelectorAll('.content').forEach(c => c.style.display = 'none');
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.getElementById(tabId).classList.add('active');
+            document.getElementById(tab).style.display = 'block';
             event.currentTarget.classList.add('active');
+        }
+
+        // إرسال أمر للبوت لفتح محادثة معينة
+        function openChat(userId) {
+            tg.sendData("open_chat_" + userId);
+            tg.close();
         }
     </script>
 </body>
