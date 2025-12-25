@@ -1,107 +1,1319 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="ar" dir="rtl" id="html-theme">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nox System</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NOX - Anonymous Chat System</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* تم تحديث CSS ليشمل كل العناصر الجديدة */
+        /* أضفت CSS خاص بالثيم الفاتح */
         :root {
-            --bg: #0a0a2a; --card: rgba(30, 30, 50, 0.9); --text: #fff; --accent: #00d4ff;
+            --primary-color: #0088cc;
+            --secondary-color: #00d4ff;
+            --premium-color: #a855f7;
+            --danger-color: #e74c3c;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            
+            /* ألوان الثيم الداكن */
+            --bg-primary: #0a0a2a;
+            --bg-secondary: #1a1a3a;
+            --bg-card: rgba(30, 30, 50, 0.9);
+            --text-primary: #ffffff;
+            --text-secondary: #ddd;
+            --border-color: rgba(255, 255, 255, 0.1);
         }
-        body.light {
-            --bg: #f0f2f5; --card: #ffffff; --text: #1c1e21; --accent: #0088cc;
-        }
-        body { background: var(--bg); color: var(--text); font-family: 'Cairo', sans-serif; transition: 0.3s; margin: 0; }
-        
-        /* Bottom Navigation */
-        .nav-bar {
-            position: fixed; bottom: 0; width: 100%; background: var(--card);
-            display: flex; justify-content: space-around; padding: 10px 0;
-            border-top: 1px solid rgba(255,255,255,0.1); backdrop-filter: blur(10px);
-        }
-        .nav-item { text-align: center; font-size: 0.8rem; color: #888; cursor: pointer; }
-        .nav-item.active { color: var(--accent); }
-        .nav-item i { font-size: 1.5rem; display: block; }
 
-        /* Sections */
-        .section { display: none; padding: 20px; padding-bottom: 80px; }
-        .section.active { display: block; animation: fadeIn 0.3s; }
-        
-        .admin-only { background: linear-gradient(45deg, #ff416c, #ff4b2b); border-radius: 10px; padding: 15px; margin-top: 20px; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        [data-theme="light"] {
+            --bg-primary: #f5f7fa;
+            --bg-secondary: #ffffff;
+            --bg-card: rgba(255, 255, 255, 0.95);
+            --text-primary: #2c3e50;
+            --text-secondary: #555;
+            --border-color: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Cairo', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary), var(--bg-secondary));
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+
+        /* تطبيقات الألوان الجديدة */
+        .app-header {
+            background: rgba(var(--bg-primary), 0.95);
+            backdrop-filter: blur(15px);
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+        }
+
+        /* شريط البحث */
+        .search-bar {
+            padding: 15px 20px;
+            background: rgba(var(--bg-primary), 0.9);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .search-container {
+            position: relative;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 12px 45px 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-color);
+            border-radius: 25px;
+            color: var(--text-primary);
+            font-size: 1rem;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+        }
+
+        /* قائمة الإعدادات */
+        .settings-menu {
+            list-style: none;
+        }
+
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid var(--border-color);
+            cursor: pointer;
+        }
+
+        .settings-item:last-child {
+            border-bottom: none;
+        }
+
+        .settings-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .settings-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(var(--primary-color), 0.1);
+            color: var(--primary-color);
+        }
+
+        /* تبويب الإحصائيات */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-item {
+            background: rgba(var(--primary-color), 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(var(--primary-color), 0.2);
+        }
+
+        /* لوحة التحكم للمالك */
+        .admin-panel {
+            margin-top: 20px;
+        }
+
+        .admin-section {
+            background: rgba(var(--danger-color), 0.1);
+            border: 2px solid rgba(var(--danger-color), 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .admin-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .admin-btn {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        /* تبويب البحث */
+        .search-results {
+            margin-top: 20px;
+        }
+
+        .result-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .result-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+
+        .result-tab.active {
+            border-bottom-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        /* تحسين التبويبات */
+        .tabs-container {
+            background: rgba(var(--bg-primary), 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        /* تبويب الملف الشخصي */
+        .profile-header {
+            text-align: center;
+            padding: 30px 20px;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border-radius: 20px 20px 0 0;
+            margin-bottom: 20px;
+        }
+
+        .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: white;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: var(--primary-color);
+            border: 5px solid rgba(255, 255, 255, 0.3);
+        }
+
+        /* إشعارات */
+        .notification-badge {
+            background: var(--danger-color);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        /* تطبيق الثيم الداكن/الفاتح */
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 15px;
+            background: rgba(var(--primary-color), 0.1);
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* تحسين عام للتصميم */
+        .smooth-transition {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hover-lift:hover {
+            transform: translateY(-5px);
+        }
+
+        /* تحسين التجاوب */
+        @media (max-width: 768px) {
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-bar {
+                padding: 10px 15px;
+            }
+            
+            .profile-header {
+                padding: 20px 15px;
+            }
+        }
+
+        /* إضافة المزيد من التخصيصات */
+        .premium-tag {
+            background: linear-gradient(45deg, var(--premium-color), #ec4899);
+            color: white;
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+
+        .online-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--success-color);
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+
+        /* تحسين شريط التمرير */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border-radius: 4px;
+        }
     </style>
 </head>
-<body class="dark">
-
-<div id="home" class="section active">
-    <h2>🏠 الصفحة الرئيسية</h2>
-    <div class="card" style="background: var(--card); padding: 20px; border-radius: 15px;">
-        <p>مرحباً بك في Nox. ابدأ الدردشة الآن!</p>
-        <button onclick="tg.sendData('start_random_chat')" style="width:100%; padding:15px; border-radius:10px; border:none; background: var(--accent); color: white;">🎲 محادثة عشوائية</button>
+<body>
+    <!-- Header مع شريط البحث -->
+    <div class="app-header">
+        <div class="logo-container">
+            <div class="logo-main">NOX</div>
+            <div class="logo-subtitle">anonymous chat system</div>
+        </div>
+        
+        <!-- شريط البحث (يظهر في بعض الأقسام) -->
+        <div class="search-bar" id="searchBar" style="display: none;">
+            <div class="search-container">
+                <input type="text" class="search-input" id="searchInput" placeholder="ابحث عن مستخدمين أو قنوات...">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+        </div>
     </div>
-</div>
 
-<div id="search" class="section">
-    <h2>🔍 بحث متطور</h2>
-    <input type="text" placeholder="ابحث برابط المستخدم أو القناة..." style="width:90%; padding:12px; border-radius:8px; border:none;">
-</div>
+    <!-- Alert System -->
+    <div class="alert" id="alert"></div>
 
-<div id="settings" class="section">
-    <h2>⚙️ الإعدادات والخصوصية</h2>
-    <div class="card" onclick="toggleTheme()" style="padding:15px; background:var(--card); margin-bottom:10px; border-radius:10px;">
-        🌓 تغيير الثيم (ليلي/نهاري)
+    <!-- Main Navigation Tabs -->
+    <div class="tabs-container">
+        <div class="tab active" data-tab="dashboard">
+            <i class="fas fa-home"></i>
+            <span>الرئيسية</span>
+        </div>
+        <div class="tab" data-tab="chats">
+            <i class="fas fa-comments"></i>
+            <span>الدردشات</span>
+            <span class="notification-badge" id="chatBadge" style="display: none;">0</span>
+        </div>
+        <div class="tab" data-tab="channels">
+            <i class="fas fa-users"></i>
+            <span>القنوات</span>
+        </div>
+        <div class="tab" data-tab="search">
+            <i class="fas fa-search"></i>
+            <span>البحث</span>
+        </div>
+        <div class="tab" data-tab="profile">
+            <i class="fas fa-user"></i>
+            <span>الملف</span>
+        </div>
+        <div class="tab" data-tab="settings">
+            <i class="fas fa-cog"></i>
+            <span>الإعدادات</span>
+        </div>
     </div>
-    <div class="card" onclick="openSubscription()" style="padding:15px; background:var(--card); border-radius:10px;">
-        💎 ترقية الاشتراك (نجوم تيليجرام)
+
+    <!-- Dashboard Tab -->
+    <div class="tab-content active" id="dashboard">
+        <!-- User Stats -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-chart-bar"></i> إحصائياتك</div>
+                <button class="btn btn-secondary" onclick="refreshStats()">
+                    <i class="fas fa-sync-alt"></i> تحديث
+                </button>
+            </div>
+            <div class="stats-grid" id="statsGrid">
+                <!-- سيتم ملؤها ديناميكياً -->
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-bolt"></i> إجراءات سريعة</div>
+            </div>
+            <div class="card-content">
+                <div class="quick-actions">
+                    <button class="btn" onclick="startRandomChat()">
+                        <i class="fas fa-random"></i> دردشة عشوائية
+                    </button>
+                    <button class="btn" onclick="startPrivateChat()">
+                        <i class="fas fa-user-secret"></i> دردشة خاصة
+                    </button>
+                    <button class="btn" onclick="createChannel()">
+                        <i class="fas fa-plus-circle"></i> قناة جديدة
+                    </button>
+                    <button class="btn" onclick="inviteFriends()">
+                        <i class="fas fa-user-plus"></i> دعوة أصدقاء
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Premium Offer -->
+        <div class="card premium-feature">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-crown"></i> ترقية إلى مميز</div>
+                <div class="premium-tag">محدود</div>
+            </div>
+            <div class="card-content">
+                <p>احصل على ميزات حصرية وإمكانيات غير محدودة!</p>
+                <ul class="premium-features-list">
+                    <li><i class="fas fa-check"></i> محادثات غير محدودة</li>
+                    <li><i class="fas fa-check"></i> قنوات مخصصة</li>
+                    <li><i class="fas fa-check"></i> بدون إعلانات</li>
+                    <li><i class="fas fa-check"></i> إحصائيات متقدمة</li>
+                </ul>
+                <button class="btn btn-premium" onclick="openPremium()">
+                    <i class="fas fa-gem"></i> عرض الخطط
+                </button>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-history"></i> النشاط الأخير</div>
+            </div>
+            <div class="card-content" id="recentActivity">
+                <!-- سيتم ملؤها ديناميكياً -->
+            </div>
+        </div>
     </div>
-    
-    <div id="admin-panel" class="admin-only" style="display:none;">
-        <h3>👑 لوحة تحكم المالك</h3>
-        <p>المستخدمين النشطين: <span id="user-count">...</span></p>
-        <button onclick="alert('إرسال إرسالية للكل')" style="padding:10px; border:none; border-radius:5px;">إرسال إعلان عام</button>
+
+    <!-- Chats Tab -->
+    <div class="tab-content" id="chats">
+        <div class="chats-header">
+            <div class="chats-controls">
+                <button class="btn btn-small" onclick="startNewChat()">
+                    <i class="fas fa-plus"></i> محادثة جديدة
+                </button>
+                <button class="btn btn-small btn-secondary" onclick="toggleSearchBar()">
+                    <i class="fas fa-search"></i> بحث في المحادثات
+                </button>
+            </div>
+        </div>
+        <div id="chatsList">
+            <!-- قائمة المحادثات -->
+        </div>
     </div>
-</div>
 
-<nav class="nav-bar">
-    <div class="nav-item active" onclick="showSection('home', this)"><i class="fas fa-home"></i>الرئيسية</div>
-    <div class="nav-item" onclick="showSection('search', this)"><i class="fas fa-search"></i>بحث</div>
-    <div class="nav-item" onclick="showSection('chats', this)"><i class="fas fa-comments"></i>دردشات</div>
-    <div class="nav-item" onclick="showSection('settings', this)"><i class="fas fa-cog"></i>الاعدادات</div>
-</nav>
+    <!-- Search Tab -->
+    <div class="tab-content" id="search">
+        <div class="search-tabs">
+            <div class="result-tabs">
+                <div class="result-tab active" data-search-type="users">المستخدمين</div>
+                <div class="result-tab" data-search-type="channels">القنوات</div>
+                <div class="result-tab" data-search-type="public">العامة</div>
+            </div>
+            
+            <div class="search-filters">
+                <select id="searchFilter" onchange="updateSearchFilter()">
+                    <option value="all">الكل</option>
+                    <option value="online">المتصلين الآن</option>
+                    <option value="premium">المستخدمين المميزين</option>
+                </select>
+            </div>
+        </div>
+        
+        <div id="searchResults">
+            <!-- نتائج البحث -->
+        </div>
+    </div>
 
-<script>
-    const tg = window.Telegram.WebApp;
-    tg.expand();
+    <!-- Profile Tab -->
+    <div class="tab-content" id="profile">
+        <div class="profile-header">
+            <div class="profile-avatar" id="userAvatar">
+                <!-- سيتم تعيين الحرف الأول من الاسم -->
+            </div>
+            <h2 id="profileName">جار التحميل...</h2>
+            <div class="profile-plan" id="profilePlan">🆓 مجاني</div>
+            <div class="profile-stats">
+                <span><i class="fas fa-calendar"></i> عضو منذ: <span id="joinDate">--</span></span>
+                <span><i class="fas fa-clock"></i> آخر نشاط: <span id="lastActive">--</span></span>
+            </div>
+        </div>
 
-    // التحقق من المالك لإظهار لوحة التحكم
-    const adminIds = [5959433660];
-    const urlParams = new URLSearchParams(window.location.search);
-    const userId = parseInt(urlParams.get('user_id'));
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-user-edit"></i> تعديل الملف الشخصي</div>
+            </div>
+            <div class="card-content">
+                <div class="form-group">
+                    <label for="displayName">الاسم المعروض</label>
+                    <input type="text" id="displayName" class="form-input" placeholder="أدخل اسمك">
+                </div>
+                <div class="form-group">
+                    <label for="userBio">نبذة عنك</label>
+                    <textarea id="userBio" class="form-input" rows="3" placeholder="أخبرنا عن نفسك..."></textarea>
+                </div>
+                <button class="btn" onclick="updateProfile()">
+                    <i class="fas fa-save"></i> حفظ التعديلات
+                </button>
+            </div>
+        </div>
 
-    if (adminIds.includes(userId)) {
-        document.getElementById('admin-panel').style.display = 'block';
-    }
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-shield-alt"></i> الأمان والخصوصية</div>
+            </div>
+            <div class="card-content">
+                <div class="privacy-settings">
+                    <div class="setting-item">
+                        <span>إظهار حالة الاتصال</span>
+                        <label class="switch">
+                            <input type="checkbox" id="showOnlineStatus" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>السماح بالرسائل المباشرة</span>
+                        <label class="switch">
+                            <input type="checkbox" id="allowDirectMessages" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>إظهار آخر ظهور</span>
+                        <label class="switch">
+                            <input type="checkbox" id="showLastSeen" checked>
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    function showSection(id, el) {
-        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        el.classList.add('active');
-    }
+    <!-- Settings Tab -->
+    <div class="tab-content" id="settings">
+        <div class="settings-list">
+            <!-- اللغة -->
+            <div class="settings-item" onclick="openLanguageSettings()">
+                <div class="settings-label">
+                    <div class="settings-icon">
+                        <i class="fas fa-language"></i>
+                    </div>
+                    <div>
+                        <div class="settings-title">اللغة</div>
+                        <div class="settings-subtitle" id="currentLanguage">العربية</div>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-left"></i>
+            </div>
 
-    function toggleTheme() {
-        document.body.classList.toggle('light');
-        tg.HapticFeedback.impactOccurred('medium');
-    }
+            <!-- الثيم -->
+            <div class="settings-item">
+                <div class="settings-label">
+                    <div class="settings-icon">
+                        <i class="fas fa-palette"></i>
+                    </div>
+                    <div>
+                        <div class="settings-title">المظهر</div>
+                        <div class="settings-subtitle">ثيم داكن/فاتح</div>
+                    </div>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="themeToggle" onchange="toggleTheme()">
+                    <span class="slider"></span>
+                </label>
+            </div>
 
-    function openSubscription() {
-        // إرسال أمر للبوت لفتح الفاتورة
-        tg.sendData('action_subscribe');
-        tg.close(); // العودة للبوت لدفع النجوم
-    }
-</script>
+            <!-- الإشعارات -->
+            <div class="settings-item" onclick="openNotificationSettings()">
+                <div class="settings-label">
+                    <div class="settings-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div>
+                        <div class="settings-title">الإشعارات</div>
+                        <div class="settings-subtitle">إدارة الإشعارات</div>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-left"></i>
+            </div>
+
+            <!-- الخصوصية -->
+            <div class="settings-item" onclick="openPrivacySettings()">
+                <div class="settings-label">
+                    <div class="settings-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <div>
+                        <div class="settings-title">الخصوصية</div>
+                        <div class="settings-subtitle">إعدادات الخصوصية</div>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-left"></i>
+            </div>
+
+            <!-- الحساب -->
+            <div class="settings-item" onclick="openAccountSettings()">
+                <div class="settings-label">
+                    <div class="settings-icon">
+                        <i class="fas fa-user-cog"></i>
+                    </div>
+                    <div>
+                        <div class="settings-title">الحساب</div>
+                        <div class="settings-subtitle">إدارة الحساب</div>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-left"></i>
+            </div>
+
+            <!-- المساعدة -->
+            <div class="settings-item" onclick="openHelp()">
+                <div class="settings-label">
+                    <div class="settings-icon">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div>
+                        <div class="settings-title">المساعدة</div>
+                        <div class="settings-subtitle">الدعم والأسئلة الشائعة</div>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-left"></i>
+            </div>
+
+            <!-- حول التطبيق -->
+            <div class="settings-item" onclick="openAbout()">
+                <div class="settings-label">
+                    <div class="settings-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div>
+                        <div class="settings-title">عن التطبيق</div>
+                        <div class="settings-subtitle">الإصدار 6.0</div>
+                    </div>
+                </div>
+                <i class="fas fa-chevron-left"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- لوحة التحكم للمالك (تظهر للمالك فقط) -->
+    <div class="admin-panel" id="adminPanel" style="display: none;">
+        <div class="card admin-section">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-user-shield"></i> لوحة تحكم المالك</div>
+            </div>
+            <div class="admin-controls">
+                <button class="admin-btn" onclick="adminBroadcast()">
+                    <i class="fas fa-bullhorn"></i> بث للمستخدمين
+                </button>
+                <button class="admin-btn" onclick="adminViewStats()">
+                    <i class="fas fa-chart-pie"></i> إحصائيات النظام
+                </button>
+                <button class="admin-btn" onclick="adminManageUsers()">
+                    <i class="fas fa-users-cog"></i> إدارة المستخدمين
+                </button>
+                <button class="admin-btn" onclick="adminViewPayments()">
+                    <i class="fas fa-money-check-alt"></i> المدفوعات
+                </button>
+                <button class="admin-btn" onclick="adminSystemLogs()">
+                    <i class="fas fa-file-alt"></i> سجلات النظام
+                </button>
+                <button class="admin-btn" onclick="adminBackup()">
+                    <i class="fas fa-database"></i> نسخ احتياطي
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAB للتحكم السريع -->
+    <div class="fab-container">
+        <div class="fab main-fab" onclick="toggleFabMenu()">
+            <i class="fas fa-plus"></i>
+        </div>
+        <div class="fab-menu" id="fabMenu">
+            <div class="fab-item" onclick="startNewChat()">
+                <i class="fas fa-comment"></i>
+                <span>محادثة جديدة</span>
+            </div>
+            <div class="fab-item" onclick="createChannel()">
+                <i class="fas fa-users"></i>
+                <span>قناة جديدة</span>
+            </div>
+            <div class="fab-item" onclick="refreshAll()">
+                <i class="fas fa-sync-alt"></i>
+                <span>تحديث</span>
+            </div>
+            <div class="fab-item" onclick="shareApp()">
+                <i class="fas fa-share"></i>
+                <span>مشاركة</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div class="modal" id="languageModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-language"></i> اختيار اللغة</h3>
+            <div class="language-options">
+                <div class="language-option active" data-lang="ar">
+                    <span>🇸🇦 العربية</span>
+                </div>
+                <div class="language-option" data-lang="en">
+                    <span>🇬🇧 English</span>
+                </div>
+                <div class="language-option" data-lang="fr">
+                    <span>🇫🇷 Français</span>
+                </div>
+            </div>
+            <button class="btn" onclick="closeModal('languageModal')">تم</button>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal" id="paymentModal">
+        <div class="modal-content">
+            <h3><i class="fas fa-credit-card"></i> إتمام الدفع</h3>
+            <div id="paymentContent">
+                <!-- محتوى الدفع -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============= النظام الأساسي =============
+        let tg = window.Telegram?.WebApp;
+        let userId = null;
+        let userToken = null;
+        let userProfile = null;
+        let isAdmin = false;
+        let currentTheme = 'dark';
+        
+        // تهيئة التطبيق
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeApp();
+        });
+        
+        async function initializeApp() {
+            try {
+                if (tg) {
+                    tg.expand();
+                    tg.enableClosingConfirmation();
+                    tg.BackButton.hide();
+                    
+                    // جلب بيانات المستخدم من البوت
+                    const urlParams = new URLSearchParams(window.location.search);
+                    userId = urlParams.get('user_id');
+                    userToken = urlParams.get('token');
+                    
+                    if (!userId || !userToken) {
+                        showAlert('يرجى فتح التطبيق من خلال بوت Telegram', 'error');
+                        return;
+                    }
+                    
+                    // إعداد الواجهة
+                    setupEventListeners();
+                    loadUserProfile();
+                    loadDashboardData();
+                    checkAdminStatus();
+                    
+                    // تفعيل التحديث التلقائي
+                    startAutoRefresh();
+                    
+                } else {
+                    // وضع التطوير
+                    console.log('Development mode activated');
+                    userId = 'demo_user_' + Math.random().toString(36).substr(2, 9);
+                    userToken = 'demo_token_' + Math.random().toString(36).substr(2, 9);
+                    setupEventListeners();
+                    loadDemoData();
+                }
+                
+            } catch (error) {
+                console.error('Initialization error:', error);
+                showAlert('خطأ في تهيئة التطبيق', 'error');
+            }
+        }
+        
+        // ============= إعدادات الواجهة =============
+        function setupEventListeners() {
+            // التبويبات
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    switchTab(tabId);
+                });
+            });
+            
+            // البحث
+            document.getElementById('searchInput')?.addEventListener('input', function(e) {
+                if (e.target.value.length > 2) {
+                    performSearch(e.target.value);
+                }
+            });
+            
+            // تغيير الثيم
+            document.getElementById('themeToggle')?.addEventListener('change', function(e) {
+                toggleTheme(e.target.checked);
+            });
+            
+            // تحميل الثيم المحفوظ
+            const savedTheme = localStorage.getItem('nox_theme') || 'dark';
+            toggleTheme(savedTheme === 'light');
+        }
+        
+        // ============= إدارة التبويبات =============
+        function switchTab(tabId) {
+            // إخفاء كل المحتويات
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // إلغاء تفعيل كل التبويبات
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // تفعيل التبويب المطلوب
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`.tab[data-tab="${tabId}"]`).classList.add('active');
+            
+            // تحميل بيانات التبويب
+            switch(tabId) {
+                case 'dashboard':
+                    loadDashboardData();
+                    break;
+                case 'chats':
+                    loadChats();
+                    break;
+                case 'channels':
+                    loadChannels();
+                    break;
+                case 'search':
+                    showSearchTab();
+                    break;
+                case 'profile':
+                    loadProfile();
+                    break;
+                case 'settings':
+                    loadSettings();
+                    break;
+            }
+        }
+        
+        // ============= التواصل مع البوت =============
+        async function sendToBot(action, data = {}) {
+            try {
+                const requestData = {
+                    action,
+                    userId,
+                    token: userToken,
+                    ...data,
+                    timestamp: Date.now()
+                };
+                
+                if (tg?.sendData) {
+                    return new Promise((resolve) => {
+                        tg.sendData(JSON.stringify(requestData));
+                        
+                        // محاكاة الاستجابة في وضع التطوير
+                        if (!tg) {
+                            setTimeout(() => {
+                                resolve(getMockResponse(action, data));
+                            }, 500);
+                        } else {
+                            resolve({ success: true, message: 'تم إرسال البيانات' });
+                        }
+                    });
+                } else {
+                    // وضع التطوير
+                    return getMockResponse(action, data);
+                }
+            } catch (error) {
+                console.error('Send to bot error:', error);
+                return { success: false, error: error.message };
+            }
+        }
+        
+        // ============= الوظائف الرئيسية =============
+        async function loadUserProfile() {
+            const response = await sendToBot('get_profile');
+            if (response.success) {
+                userProfile = response.profile;
+                updateProfileDisplay();
+                
+                // إشعار الترقية للمستخدمين المجانيين
+                if (userProfile.plan === 'free') {
+                    setTimeout(() => {
+                        showAlert('💎 قم بالترقية إلى الحساب المميز لإزالة الإعلانات!', 'info', 5000);
+                    }, 3000);
+                }
+            }
+        }
+        
+        async function loadDashboardData() {
+            // تحميل الإحصائيات
+            const statsResponse = await sendToBot('get_stats');
+            if (statsResponse.success) {
+                updateStatsDisplay(statsResponse.stats);
+            }
+            
+            // تحميل النشاط الأخير
+            const activityResponse = await sendToBot('get_recent_activity');
+            if (activityResponse.success) {
+                updateRecentActivity(activityResponse.activity);
+            }
+        }
+        
+        async function loadChats() {
+            showLoading('chatsList', 'جاري تحميل المحادثات...');
+            const response = await sendToBot('get_chats');
+            
+            if (response.success && response.chats.length > 0) {
+                renderChatsList(response.chats);
+                updateChatBadge(response.unreadCount || 0);
+            } else {
+                showEmptyState('chatsList', 'لا توجد محادثات', 'ابدأ محادثة جديدة من الزر أدناه');
+            }
+        }
+        
+        async function loadChannels() {
+            showLoading('channelsList', 'جاري تحميل القنوات...');
+            const response = await sendToBot('get_channels');
+            
+            if (response.success && response.channels.length > 0) {
+                renderChannelsList(response.channels);
+            } else {
+                showEmptyState('channelsList', 'لا توجد قنوات', 'أنشئ قناة جديدة أو انضم إلى قنوات عامة');
+            }
+        }
+        
+        async function loadProfile() {
+            if (userProfile) {
+                updateProfileDisplay();
+            } else {
+                await loadUserProfile();
+            }
+        }
+        
+        // ============= البحث =============
+        async function performSearch(query) {
+            showLoading('searchResults', 'جاري البحث...');
+            const response = await sendToBot('search', { query });
+            
+            if (response.success) {
+                renderSearchResults(response.results);
+            }
+        }
+        
+        async function showSearchTab() {
+            document.getElementById('searchBar').style.display = 'block';
+            document.getElementById('searchInput').focus();
+        }
+        
+        // ============= نظام الدردشة =============
+        async function startNewChat() {
+            showAlert('جاري البحث عن شريك محادثة...', 'info');
+            const response = await sendToBot('start_chat');
+            
+            if (response.success) {
+                switchTab('chats');
+                await loadChats();
+                showAlert('تم بدء محادثة جديدة!', 'success');
+            }
+        }
+        
+        async function startRandomChat() {
+            const response = await sendToBot('start_random_chat');
+            if (response.success) {
+                showAlert('تم توصيلك بمستخدم عشوائي!', 'success');
+                switchTab('chats');
+            }
+        }
+        
+        // ============= نظام القنوات =============
+        async function createChannel() {
+            const channelName = prompt('أدخل اسم القناة:');
+            if (channelName && channelName.length >= 3) {
+                const response = await sendToBot('create_channel', { name: channelName });
+                if (response.success) {
+                    showAlert(`تم إنشاء قناة "${channelName}" بنجاح!`, 'success');
+                    switchTab('channels');
+                }
+            }
+        }
+        
+        // ============= نظام الدفع والاشتراكات =============
+        async function openPremium() {
+            const response = await sendToBot('get_subscription_plans');
+            if (response.success) {
+                showSubscriptionPlans(response.plans);
+            }
+        }
+        
+        async function subscribeToPlan(planId) {
+            showAlert('جاري توجيهك لصفحة الدفع...', 'info');
+            const response = await sendToBot('subscribe', { planId });
+            
+            if (response.success && response.payment_url) {
+                // توجيه لصفحة الدفع
+                window.open(response.payment_url, '_blank');
+            }
+        }
+        
+        // ============= الإعدادات =============
+        function toggleTheme(isLight) {
+            currentTheme = isLight ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('nox_theme', currentTheme);
+            document.getElementById('themeToggle').checked = isLight;
+        }
+        
+        async function updateProfile() {
+            const displayName = document.getElementById('displayName').value;
+            const userBio = document.getElementById('userBio').value;
+            
+            const response = await sendToBot('update_profile', {
+                displayName,
+                bio: userBio
+            });
+            
+            if (response.success) {
+                showAlert('تم تحديث الملف الشخصي بنجاح!', 'success');
+                loadProfile();
+            }
+        }
+        
+        // ============= لوحة تحكم المالك =============
+        async function checkAdminStatus() {
+            const response = await sendToBot('check_admin');
+            if (response.success && response.isAdmin) {
+                isAdmin = true;
+                document.getElementById('adminPanel').style.display = 'block';
+            }
+        }
+        
+        async function adminBroadcast() {
+            const message = prompt('أدخل رسالة البث:');
+            if (message) {
+                const response = await sendToBot('admin_broadcast', { message });
+                if (response.success) {
+                    showAlert('تم إرسال البث لجميع المستخدمين', 'success');
+                }
+            }
+        }
+        
+        async function adminViewStats() {
+            const response = await sendToBot('admin_get_stats');
+            if (response.success) {
+                showAdminStats(response.stats);
+            }
+        }
+        
+        // ============= المساعدة والدعم =============
+        async function openHelp() {
+            const response = await sendToBot('get_help');
+            if (response.success) {
+                showHelpContent(response.help);
+            }
+        }
+        
+        // ============= الوظائف المساعدة =============
+        function showAlert(message, type = 'info', duration = 3000) {
+            const alertEl = document.getElementById('alert');
+            alertEl.textContent = message;
+            alertEl.className = `alert alert-${type} show`;
+            
+            setTimeout(() => {
+                alertEl.classList.remove('show');
+            }, duration);
+        }
+        
+        function showLoading(containerId, message = 'جاري التحميل...') {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <p>${message}</p>
+                    </div>
+                `;
+            }
+        }
+        
+        function showEmptyState(containerId, title, description) {
+            const container = document.getElementById(containerId);
+            if (container) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">
+                            <i class="fas fa-inbox"></i>
+                        </div>
+                        <div class="empty-title">${title}</div>
+                        <div class="empty-description">${description}</div>
+                    </div>
+                `;
+            }
+        }
+        
+        function updateProfileDisplay() {
+            if (!userProfile) return;
+            
+            // تحديث الاسم
+            document.getElementById('profileName').textContent = userProfile.name;
+            document.getElementById('displayName').value = userProfile.name;
+            
+            // تحديث الباقة
+            const planEl = document.getElementById('profilePlan');
+            planEl.textContent = userProfile.plan === 'premium' ? '💎 مميز' : '🆓 مجاني';
+            planEl.className = `profile-plan ${userProfile.plan === 'premium' ? 'premium' : ''}`;
+            
+            // تحديث التاريخ
+            document.getElementById('joinDate').textContent = userProfile.joinDate;
+            document.getElementById('lastActive').textContent = userProfile.lastActive || 'الآن';
+            
+            // تحديث الأفاتار
+            const avatarEl = document.getElementById('userAvatar');
+            if (avatarEl) {
+                avatarEl.textContent = userProfile.name.charAt(0).toUpperCase();
+            }
+        }
+        
+        function updateStatsDisplay(stats) {
+            const statsGrid = document.getElementById('statsGrid');
+            if (!statsGrid) return;
+            
+            statsGrid.innerHTML = `
+                <div class="stat-item">
+                    <div class="stat-value">${stats.activeChats || 0}</div>
+                    <div class="stat-label">محادثات نشطة</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.totalMessages || 0}</div>
+                    <div class="stat-label">رسائل مرسلة</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.channelsCreated || 0}</div>
+                    <div class="stat-label">قنوات منشأة</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">${stats.channelsJoined || 0}</div>
+                    <div class="stat-label">قنوات منضم لها</div>
+                </div>
+            `;
+        }
+        
+        function updateChatBadge(count) {
+            const badge = document.getElementById('chatBadge');
+            if (count > 0) {
+                badge.textContent = count;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+        
+        // ============= التحديث التلقائي =============
+        function startAutoRefresh() {
+            // تحديث كل دقيقة
+            setInterval(async () => {
+                if (document.querySelector('.tab-content.active').id === 'dashboard') {
+                    await loadDashboardData();
+                } else if (document.querySelector('.tab-content.active').id === 'chats') {
+                    await loadChats();
+                }
+            }, 60000);
+        }
+        
+        // ============= بيانات تجريبية =============
+        function loadDemoData() {
+            userProfile = {
+                name: 'مستخدم تجريبي',
+                plan: 'free',
+                joinDate: '2024-01-15',
+                lastActive: 'الآن'
+            };
+            
+            updateProfileDisplay();
+            updateStatsDisplay({
+                activeChats: 3,
+                totalMessages: 47,
+                channelsCreated: 1,
+                channelsJoined: 3
+            });
+        }
+        
+        function getMockResponse(action, data) {
+            // محاكاة استجابات البوت في وضع التطوير
+            const mockResponses = {
+                'get_profile': {
+                    success: true,
+                    profile: {
+                        name: 'مستخدم NOX',
+                        plan: 'free',
+                        joinDate: '2024-01-01',
+                        lastActive: 'منذ 5 دقائق'
+                    }
+                },
+                'get_stats': {
+                    success: true,
+                    stats: {
+                        activeChats: 2,
+                        totalMessages: 25,
+                        channelsCreated: 1,
+                        channelsJoined: 2
+                    }
+                },
+                'get_chats': {
+                    success: true,
+                    chats: [
+                        {
+                            id: 1,
+                            alias: 'الظل الغامض #1234',
+                            lastMessage: 'مرحباً، كيف حالك؟',
+                            time: '10:30',
+                            unread: 2
+                        },
+                        {
+                            id: 2,
+                            alias: 'الشبح الصامت #5678',
+                            lastMessage: 'شكراً للمحادثة الرائعة',
+                            time: 'أمس',
+                            unread: 0
+                        }
+                    ],
+                    unreadCount: 2
+                },
+                'get_channels': {
+                    success: true,
+                    channels: [
+                        {
+                            id: 1,
+                            name: 'مجتمع المبرمجين',
+                            description: 'مناقشات برمجية وتطوير',
+                            members: 56,
+                            role: 'عضو'
+                        },
+                        {
+                            id: 2,
+                            name: 'نادي الكتاب',
+                            description: 'مناقشات أدبية وثقافية',
+                            members: 34,
+                            role: 'مالك'
+                        }
+                    ]
+                },
+                'search': {
+                    success: true,
+                    results: {
+                        users: [
+                            { id: 1001, name: 'أحمد محمد', online: true },
+                            { id: 1002, name: 'سارة علي', online: false }
+                        ],
+                        channels: [
+                            { id: 2001, name: 'تعلم البرمجة', members: 120 }
+                        ]
+                    }
+                }
+            };
+            
+            return mockResponses[action] || { success: true, message: 'Action completed' };
+        }
+        
+        // ============= وظائف إضافية =============
+        async function refreshAll() {
+            showAlert('جاري تحديث البيانات...', 'info');
+            
+            await Promise.all([
+                loadUserProfile(),
+                loadDashboardData(),
+                loadChats(),
+                loadChannels()
+            ]);
+            
+            showAlert('تم تحديث البيانات بنجاح!', 'success');
+        }
+        
+        function shareApp() {
+            const shareUrl = `https://t.me/${tg?.initDataUnsafe?.user?.username || 'nox_chat_bot'}`;
+            const shareText = 'جرب تطبيق NOX للدردشة المجهولة!';
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'NOX Chat',
+                    text: shareText,
+                    url: shareUrl
+                });
+            } else {
+                // نسخ الرابط
+                navigator.clipboard.writeText(shareUrl);
+                showAlert('تم نسخ رابط المشاركة!', 'success');
+            }
+        }
+        
+        function toggleFabMenu() {
+            const menu = document.getElementById('fabMenu');
+            menu.classList.toggle('show');
+        }
+        
+        // إغلاق القائمة عند النقر خارجها
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.fab-container')) {
+                document.getElementById('fabMenu').classList.remove('show');
+            }
+        });
+        
+        // ============= التهيئة النهائية =============
+        // تحميل البيانات الأولية
+        setTimeout(() => {
+            loadDashboardData();
+            loadChats();
+        }, 1000);
+        
+    </script>
 </body>
 </html>
